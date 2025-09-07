@@ -1,4 +1,4 @@
-name: Extract Multiple HLS Links
+name: Extract HLS Links
 
 on:
   schedule:
