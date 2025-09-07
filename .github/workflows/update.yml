@@ -1,30 +1,35 @@
-name: Update YouTube Playlist
+name: Generar playlist M3U
 
 on:
   schedule:
     - cron: "0 * * * *"  # Cada hora
-  workflow_dispatch:
+  workflow_dispatch:  # Permite ejecutarlo manualmente
 
 jobs:
-  update:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+    - name: Clonar repositorio
+      uses: actions/checkout@v3
 
-      - name: Instalar dependencias
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 python3-pip
-          pip install playwright
-          playwright install chromium
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: Generar playlist
-        run: python3 youtube_to_m3u.py
+    - name: Instalar dependencias
+      run: |
+        pip install requests
 
-      - name: Commit & Push cambios
-        run: |
-          git config --global user.email "bot@example.com"
-          git config --global user.name "GitHub Bot"
-          git add playlist.m3u8
-          git commit -m "Actualizar playlist (Playwright)"
-          git push
+    - name: Ejecutar script
+      run: |
+        python3 youtube_to_m3u.py
+
+    - name: Commit y Push
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add playlist.m3u
+        git commit -m "Actualización automática de playlist" || echo "No hay cambios"
+        git push
