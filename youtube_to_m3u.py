@@ -12,10 +12,11 @@ def get_hls_url(youtube_url):
             stderr=subprocess.PIPE,
             text=True
         )
-        if result.returncode == 0:
+        if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
         else:
             print(f"[ERROR] No se pudo extraer stream de {youtube_url}")
+            print(result.stderr)
             return None
     except Exception as e:
         print(f"[ERROR] {e}")
@@ -29,7 +30,6 @@ def generate_m3u8():
         out.write('#EXTM3U\n')
         for line in lines:
             if line.strip():
-                # Ahora solo aceptamos: Nombre|URL|Logo
                 parts = line.strip().split("|")
                 if len(parts) < 2:
                     continue
@@ -40,7 +40,10 @@ def generate_m3u8():
                 print(f"[INFO] Procesando {name}...")
                 hls_url = get_hls_url(url)
                 if hls_url:
-                    out.write(f'#EXTINF:-1 tvg-logo="{logo}",{name}\n{hls_url}\n')
+                    if logo:
+                        out.write(f'#EXTINF:-1 tvg-logo="{logo}",{name}\n{hls_url}\n')
+                    else:
+                        out.write(f'#EXTINF:-1,{name}\n{hls_url}\n')
 
 if __name__ == "__main__":
     generate_m3u8()
