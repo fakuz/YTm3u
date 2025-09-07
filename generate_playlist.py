@@ -1,21 +1,48 @@
-import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 import time
 
 INPUT_FILE = "links.txt"
 OUTPUT_FILE = "playlist.m3u"
-BASE_URL = "https://mobi.jawaltv.com/extras/youtube/"
+PAGE_URL = "https://mobi.jawaltv.com/extras/youtube/"
 
 def get_m3u8_link(youtube_url):
     try:
-        response = requests.get(BASE_URL, params={"url": youtube_url}, timeout=15)
-        if response.status_code == 200:
-            link = response.text.strip()
-            if link.startswith("https://manifest.googlevideo.com") and ".m3u8" in link:
-                return link
-            else:
-                print(f"[WARN] Respuesta inesperada para {youtube_url}: {link}")
-        else:
-            print(f"[ERROR] Status {response.status_code} para {youtube_url}")
+        options = Options()
+        options.add_argument("--headless")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+
+        driver = webdriver.Chrome(options=options)
+        driver.get(PAGE_URL)
+
+        # Esperar a que cargue el input
+        time.sleep(3)
+
+        # Buscar el campo de texto e ingresar el link
+        input_box = driver.find_element(By.NAME, "url")  # El name del input debería ser "url"
+        input_box.clear()
+        input_box.send_keys(youtube_url)
+
+        # Simular presionar Enter o hacer clic en Search
+        input_box.send_keys(Keys.RETURN)
+
+        # Esperar que cargue el resultado
+        time.sleep(5)
+
+        # Buscar el link .m3u8 en la página
+        page_text = driver.page_source
+        driver.quit()
+
+        # Buscar el link en el HTML
+        start = page_text.find("https://manifest.googlevideo.com")
+        if start != -1:
+            end = page_text.find(".m3u8", start) + 5
+            return page_text[start:end]
+
     except Exception as e:
         print(f"[ERROR] {e}")
     return None
@@ -41,7 +68,7 @@ def generate_playlist():
         else:
             print(f"[ERROR] No se pudo generar el link para {nombre}")
 
-        time.sleep(2)  # Pausa para no saturar el servidor
+        time.sleep(2)  # Pausa para no saturar el sitio
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(playlist_lines))
