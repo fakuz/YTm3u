@@ -1,30 +1,35 @@
-name: Actualizar playlist M3U
+name: Actualizar Playlist M3U
 
 on:
   schedule:
-    - cron: "0 * * * *" # Cada hora
-  workflow_dispatch:
+    - cron: "0 * * * *"  # Cada hora
+  workflow_dispatch:      # Permite ejecutarlo manualmente
 
 jobs:
-  build:
+  update-playlist:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout del repositorio
-        uses: actions/checkout@v3
+    - name: Checkout del repositorio
+      uses: actions/checkout@v3
 
-      - name: Instalar dependencias
-        run: |
-          sudo apt update
-          sudo apt install -y python3 python3-pip
-          pip3 install requests
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: Ejecutar script
-        run: python3 generate_playlist.py
+    - name: Instalar dependencias
+      run: |
+        pip install requests
 
-      - name: Commit y push de cambios
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add playlist.m3u
-          git commit -m "Actualización automática de playlist" || echo "Sin cambios"
-          git push
+    - name: Ejecutar script para generar playlist
+      run: |
+        python generate_playlist.py
+
+    - name: Commit y push de cambios
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add playlist.m3u
+        git commit -m "Actualización automática de playlist"
+        git push
