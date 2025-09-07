@@ -2,8 +2,11 @@ name: Extract HLS Links
 
 on:
   schedule:
-    - cron: "0 * * * *"   # Cada hora
-  workflow_dispatch:       # Permite ejecución manual
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   extract:
@@ -13,12 +16,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Verificar input.txt
+      - name: Mostrar estructura inicial
         run: |
-          echo "[INFO] Archivos iniciales:"
-          ls -la
-          echo "[INFO] Contenido de input.txt:"
-          cat input.txt || echo "[ERROR] input.txt no existe o está vacío"
+          echo "[INFO] Estructura inicial del repositorio:"
+          pwd
+          ls -R
 
       - name: Instalar dependencias
         run: |
@@ -31,17 +33,28 @@ jobs:
           echo "[INFO] Ejecutando extract_hls_multi.py"
           python3 extract_hls_multi.py
 
-      - name: Mostrar archivos generados
+      - name: Mostrar estructura después del script
         run: |
-          echo "[INFO] Archivos después de la ejecución:"
-          ls -la
-          echo "[INFO] Si existen, mostramos lista de source_*.html y playlist.m3u:"
-          ls -lh source_*.html playlist.m3u 2>/dev/null || echo "[INFO] No se generaron archivos de salida"
+          echo "[INFO] Estructura después de ejecutar el script:"
+          pwd
+          ls -R
+          echo "[INFO] Contenido de playlist.m3u si existe:"
+          cat playlist.m3u || echo "[INFO] playlist.m3u no existe"
 
-      - name: Subir cambios al repo
+      - name: Commit y push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add playlist.m3u source_*.html || true
+
+          if ls source_*.html 1> /dev/null 2>&1; then
+            git add source_*.html
+          fi
+          if [ -f playlist.m3u ]; then
+            git add playlist.m3u
+          fi
+
+          git status
           git commit -m "Actualizar resultados ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
-          git push
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
