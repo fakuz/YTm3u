@@ -21,7 +21,12 @@ async def get_hls_url(playwright, youtube_url):
 
     print(f"[INFO] Abriendo {youtube_url}")
     await page.goto(youtube_url)
-    await page.wait_for_timeout(10000)  # Espera 10s para que cargue
+
+    # Esperar hasta 30 segundos o hasta que se encuentre el HLS
+    for _ in range(30):
+        if hls_url:
+            break
+        await asyncio.sleep(1)
 
     await browser.close()
     return hls_url
@@ -45,6 +50,7 @@ async def generate_m3u8():
                     print(f"[INFO] Procesando {name}...")
                     hls_url = await get_hls_url(p, url)
                     if hls_url:
+                        print(f"[OK] {name} -> {hls_url}")
                         if logo:
                             out.write(f'#EXTINF:-1 tvg-logo="{logo}",{name}\n{hls_url}\n')
                         else:
