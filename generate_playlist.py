@@ -7,44 +7,56 @@ import time
 INPUT_FILE = "links.txt"
 OUTPUT_FILE = "playlist.m3u"
 PAGE_URL = "https://mobi.jawaltv.com/extras/youtube/"
+MAX_RETRIES = 3
+WAIT_TIME = 10  # segundos máximos para esperar el link después del clic
 
 def get_m3u8_link(youtube_url):
-    try:
-        options = Options()
-        options.add_argument("--headless")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
+    for attempt in range(1, MAX_RETRIES + 1):
+        print(f"[INFO] Intento {attempt} para {youtube_url}...")
+        try:
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
 
-        driver = webdriver.Chrome(options=options)
-        driver.get(PAGE_URL)
+            driver = webdriver.Chrome(options=options)
+            driver.get(PAGE_URL)
 
-        # Esperar a que cargue el input
-        time.sleep(3)
+            # Esperar que cargue el formulario
+            time.sleep(3)
 
-        # Buscar el campo de texto e ingresar el link
-        input_box = driver.find_element(By.NAME, "url")  # El name del input debería ser "url"
-        input_box.clear()
-        input_box.send_keys(youtube_url)
+            # Buscar el input del formulario
+            input_box = driver.find_element(By.NAME, "url")
+            input_box.clear()
+            input_box.send_keys(youtube_url)
+            input_box.send_keys(Keys.RETURN)
 
-        # Simular presionar Enter o hacer clic en Search
-        input_box.send_keys(Keys.RETURN)
+            # Esperar hasta que aparezca el link .m3u8
+            start_time = time.time()
+            m3u8_link = None
+            while time.time() - start_time < WAIT_TIME:
+                page_text = driver.page_source
+                start = page_text.find("https://manifest.googlevideo.com")
+                if start != -1:
+                    end = page_text.find(".m3u8", start) + 5
+                    m3u8_link = page_text[start:end]
+                    break
+                time.sleep(1)
 
-        # Esperar que cargue el resultado
-        time.sleep(5)
+            driver.quit()
 
-        # Buscar el link .m3u8 en la página
-        page_text = driver.page_source
-        driver.quit()
+            if m3u8_link:
+                return m3u8_link
+            else:
+                print(f"[WARN] No se encontró el link en el intento {attempt}")
+                time.sleep(2)
 
-        # Buscar el link en el HTML
-        start = page_text.find("https://manifest.googlevideo.com")
-        if start != -1:
-            end = page_text.find(".m3u8", start) + 5
-            return page_text[start:end]
+        except Exception as e:
+            print(f"[ERROR] {e} en intento {attempt}")
+            time.sleep(2)
 
-    except Exception as e:
-        print(f"[ERROR] {e}")
+    print(f"[ERROR] Falló después de {MAX_RETRIES} intentos para {youtube_url}")
     return None
 
 def generate_playlist():
@@ -65,10 +77,9 @@ def generate_playlist():
         if m3u8_link:
             playlist_lines.append(f'#EXTINF:-1,{nombre}')
             playlist_lines.append(m3u8_link)
+            print(f"[OK] Link generado para {nombre}")
         else:
             print(f"[ERROR] No se pudo generar el link para {nombre}")
-
-        time.sleep(2)  # Pausa para no saturar el sitio
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(playlist_lines))
