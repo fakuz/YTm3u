@@ -1,5 +1,8 @@
-Telefe | https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Telefe_logo.png/320px-Telefe_logo.png | https://www.youtube.com/watch?v=cb12KmMMDJA
-Canal 9 | https://upload.wikimedia.org/wikipedia/commons/7/7f/Canal_9_Argentina_logo.png | https://www.youtube.com/watch?v=qvCox4R_jmY
-C5N | https://upload.wikimedia.org/wikipedia/commons/4/4c/C5N_logo_2018.png | https://www.youtube.com/watch?v=IkyP6IqfS2E
-TN | https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/TN_logo_2021.svg/320px-TN_logo_2021.svg.png | https://www.youtube.com/watch?v=ksR2L02Z29A
-A24 | https://upload.wikimedia.org/wikipedia/commons/8/87/A24_logo.png | https://www.youtube.com/watch?v=7OuXhFeh1t8
+Telefe|https://www.youtube.com/watch?v=cb12KmMMDJA
+Canal 9|https://www.youtube.com/watch?v=qvCox4R_jmY
+C5N|https://www.youtube.com/watch?v=IkyP6IqfS2E
+TN|https://www.youtube.com/watch?v=ksR2L02Z29A
+A24|https://www.youtube.com/watch?v=7OuXhFeh1t8
+Cronica TV|https://www.youtube.com/watch?v=2QqQxD2wJ7Q
+America TV|https://www.youtube.com/watch?v=1qzGxvQ_JPY
+Canal 26|https://www.youtube.com/watch?v=DFsVTF6q-Qo
