@@ -1,7 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 
-INPUT_FILE = "hls_input.txt"  # archivo de entrada actualizado
+INPUT_FILE = "hls_input.txt"
 OUTPUT_FILE = "hls_links.txt"
 M3U_FILE = "playlist.m3u"
 
@@ -22,8 +22,22 @@ async def process_url(playwright, url, video_id):
 
     await page.goto(url, wait_until="domcontentloaded")
 
-    # Esperar hasta que aparezca el enlace o máximo 15s
-    for _ in range(30):
+    # Aceptar cookies si aparece el botón
+    try:
+        await page.click('button:has-text("Aceptar")', timeout=5000)
+        print("[INFO] Aceptadas cookies")
+    except:
+        pass
+
+    # Hacer clic en Play
+    try:
+        await page.click('button.ytp-large-play-button', timeout=5000)
+        print("[INFO] Play iniciado")
+    except:
+        print("[WARN] No se pudo hacer clic en Play (puede estar autoplay activo)")
+
+    # Esperar hasta que aparezca el enlace o máximo 20s
+    for _ in range(40):
         if links:
             break
         await asyncio.sleep(0.5)
