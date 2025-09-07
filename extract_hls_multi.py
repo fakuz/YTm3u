@@ -1,72 +1,51 @@
-#!/usr/bin/env python3
-import subprocess
-import os
+import asyncio
+from playwright.async_api import async_playwright
 import re
 
 INPUT_FILE = "hls_input.txt"
-OUTPUT_DIR = "output"
+OUTPUT_FILE = "hls_links.txt"
 
-def sanitize_filename(url):
-    """Genera un nombre seguro a partir del ID del video."""
-    match = re.search(r"v=([a-zA-Z0-9_-]+)", url)
-    return match.group(1) if match else "video"
+async def fetch_page(playwright, url, video_id):
+    browser = await playwright.chromium.launch(headless=True)
+    context = await browser.new_context()
+    page = await context.new_page()
+    
+    print(f"[INFO] Procesando URL: {url}")
+    await page.goto(url, wait_until="networkidle")
 
-def generate_hls(url):
-    video_id = sanitize_filename(url)
-    output_path = os.path.join(OUTPUT_DIR, f"{video_id}.m3u8")
+    # Guardar HTML completo
+    html = await page.content()
+    source_file = f"source_{video_id}.html"
+    with open(source_file, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"[INFO] Guardado en {source_file}")
 
-    print(f"[INFO] Procesando {url}")
-    
-    # Obtener las mejores URLs de video y audio con yt-dlp
-    try:
-        video_url = subprocess.check_output(
-            ["yt-dlp", "-f", "bestvideo", "--get-url", url],
-            text=True
-        ).strip()
-        
-        audio_url = subprocess.check_output(
-            ["yt-dlp", "-f", "bestaudio", "--get-url", url],
-            text=True
-        ).strip()
-    except subprocess.CalledProcessError as e:
-        print(f"[ERROR] No se pudo extraer {url}: {e}")
-        return
-    
-    print(f"[INFO] Generando HLS para {video_id}...")
-    
-    # Crear carpeta si no existe
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
-    # Ejecutar ffmpeg para crear HLS
-    cmd = [
-        "ffmpeg",
-        "-y",  # Sobrescribir sin preguntar
-        "-i", video_url,
-        "-i", audio_url,
-        "-c:v", "copy",
-        "-c:a", "copy",
-        "-f", "hls",
-        "-hls_time", "6",
-        "-hls_list_size", "0",
-        output_path
-    ]
-    
-    try:
-        subprocess.run(cmd, check=True)
-        print(f"[OK] Archivo HLS generado: {output_path}")
-    except subprocess.CalledProcessError as e:
-        print(f"[ERROR] FFMPEG falló en {video_id}: {e}")
+    # Buscar fragmento
+    matches = re.findall(r"https://manifest\.googlevideo\.com[^\"']+", html)
+    await browser.close()
+    return matches
 
-def main():
-    if not os.path.exists(INPUT_FILE):
-        print(f"[ERROR] No existe {INPUT_FILE}")
-        return
-    
+async def main():
     with open(INPUT_FILE, "r") as f:
-        urls = [line.strip() for line in f if line.strip()]
-    
-    for url in urls:
-        generate_hls(url)
+        urls = [u.strip() for u in f if u.strip()]
+
+    all_links = []
+    async with async_playwright() as p:
+        for url in urls:
+            video_id = url.split("v=")[-1]
+            links = await fetch_page(p, url, video_id)
+            if links:
+                print(f"[INFO] Encontrados {len(links)} enlaces en {url}")
+                all_links.extend(links)
+            else:
+                print(f"[WARN] No se encontraron enlaces en {url}")
+
+    if all_links:
+        with open(OUTPUT_FILE, "w") as f:
+            f.write("\n".join(all_links))
+        print(f"[INFO] Guardado {len(all_links)} enlaces en {OUTPUT_FILE}")
+    else:
+        print("[INFO] No se encontraron enlaces")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
