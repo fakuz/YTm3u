@@ -17,7 +17,7 @@ def generate_hls(url):
 
     print(f"[INFO] Procesando {url}")
     
-    # Obtener las mejores URLs de video y audio
+    # Obtener las mejores URLs de video y audio con yt-dlp
     try:
         video_url = subprocess.check_output(
             ["yt-dlp", "-f", "bestvideo", "--get-url", url],
@@ -37,7 +37,7 @@ def generate_hls(url):
     # Crear carpeta si no existe
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     
-    # Ejecutar ffmpeg
+    # Ejecutar ffmpeg para crear HLS
     cmd = [
         "ffmpeg",
         "-y",  # Sobrescribir sin preguntar
