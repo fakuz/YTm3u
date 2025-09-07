@@ -1,37 +1,41 @@
-name: Extraer HLS Links
+name: YouTube HLS Finder
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 * * * *"  # Cada hora
-  workflow_dispatch:      # Permite ejecución manual
 
 jobs:
-  extract-hls:
+  scrape-hls:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.11'
 
       - name: Instalar dependencias
         run: |
-          pip install playwright
-          playwright install --with-deps chromium
+          pip install -r requirements.txt
+          playwright install --with-deps
+
+      - name: Restaurar storage_state.json desde Secret
+        run: |
+          echo "${{ secrets.YT_STORAGE_STATE }}" | base64 --decode > storage_state.json
+          echo "[INFO] storage_state.json restaurado"
 
       - name: Ejecutar script
         run: |
-          echo "[INFO] Ejecutando extract_hls_multi.py"
-          python3 extract_hls_multi.py
+          python youtube_hls_finder.py scrape urls.txt -o streams.m3u
 
-      - name: Subir cambios al repo
+      - name: Commit & Push streams.m3u
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "Update HLS links" || echo "No hay cambios"
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add streams.m3u
+          git commit -m "Actualización automática de playlist" || echo "Sin cambios"
           git push
