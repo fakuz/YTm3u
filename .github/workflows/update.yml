@@ -1,9 +1,9 @@
-name: Extract HLS and Update Playlist
+name: Extract HLS from View Source
 
 on:
   schedule:
     - cron: "0 * * * *"  # Cada hora
-  workflow_dispatch:
+  workflow_dispatch:      # Permite ejecución manual
 
 jobs:
   extract:
@@ -20,12 +20,12 @@ jobs:
 
       - name: Ejecutar script
         run: |
-          python3 extract_hls_simple.py
+          python3 extract_hls_viewsource.py
 
-      - name: Subir playlist al repo
+      - name: Subir archivos al repo
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add playlist.m3u
-          git commit -m "Actualizar playlist con enlace HLS ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
+          git add playlist.m3u source.html
+          git commit -m "Actualizar playlist y guardar código fuente ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
           git push
