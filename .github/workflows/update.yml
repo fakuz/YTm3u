@@ -1,40 +1,31 @@
-name: YouTube to M3U
+name: Extract HLS and Update Playlist
 
 on:
   schedule:
     - cron: "0 * * * *"  # Cada hora
-  workflow_dispatch:      # Permite ejecutarlo manualmente
+  workflow_dispatch:
 
 jobs:
-  build:
+  extract:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install Chrome and Chromedriver
+      - name: Instalar dependencias
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver
-          which chromium-browser
-          which chromedriver
+          sudo apt-get install -y python3 python3-pip
+          pip install requests
 
-      - name: Install Python dependencies
+      - name: Ejecutar script
         run: |
-          pip install selenium
+          python3 extract_hls_simple.py
 
-      - name: Run script
+      - name: Subir playlist al repo
         run: |
-          python3 youtube_to_m3u.py
-
-      - name: Commit and push playlist
-        run: |
-          git config --global user.name "GitHub Actions"
+          git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add playlist.m3
+          git add playlist.m3u
+          git commit -m "Actualizar playlist con enlace HLS ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
+          git push
