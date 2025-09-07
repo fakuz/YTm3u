@@ -1,7 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 
-INPUT_FILE = "input.txt"
+INPUT_FILE = "hls_input.txt"  # archivo de entrada actualizado
 OUTPUT_FILE = "hls_links.txt"
 M3U_FILE = "playlist.m3u"
 
