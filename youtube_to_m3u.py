@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
-import subprocess
+import re
+import requests
 
 CHANNELS_FILE = "channels.txt"
 OUTPUT_FILE = "playlist.m3u"
 
+def extract_hls_url(html):
+    # Busca la primera coincidencia de manifest.googlevideo.com con .m3u8
+    match = re.search(r'(https://manifest\.googlevideo\.com/[^"]+m3u8)', html)
+    if match:
+        return match.group(1)
+    return None
+
 def get_hls_url(youtube_url):
     try:
-        cmd = [
-            "yt-dlp",
-            "-g",
-            "-f", "best",
-            "--hls-prefer-ffmpeg",
-            youtube_url
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode == 0:
-            return result.stdout.strip()
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        }
+        response = requests.get(youtube_url, headers=headers, timeout=15)
+        if response.status_code == 200:
+            return extract_hls_url(response.text)
         else:
-            print(f"[ERROR] yt-dlp fallo para {youtube_url}: {result.stderr}")
+            print(f"[ERROR] HTTP {response.status_code} para {youtube_url}")
             return None
     except Exception as e:
         print(f"[ERROR] {e}")
@@ -37,7 +41,7 @@ def generate_playlist():
             if hls_url:
                 playlist += f'#EXTINF:-1,{name}\n{hls_url}\n'
             else:
-                print(f"[WARN] No se pudo extraer stream para {name}")
+                print(f"[WARN] No se encontró stream para {name}")
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(playlist)
