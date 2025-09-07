@@ -3,7 +3,7 @@ name: Generate HLS from YouTube
 on:
   schedule:
     - cron: "0 * * * *"  # Cada hora
-  workflow_dispatch:  # Permite ejecución manual
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,13 +20,13 @@ jobs:
 
       - name: Ejecutar script
         run: |
-          echo "[INFO] Ejecutando generate_hls.py"
-          python3 generate_hls.py
+          echo "[INFO] Ejecutando extract_hls_multi.py"
+          python3 extract_hls_multi.py
 
       - name: Commit y push resultados
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add output/*.m3u8
-          git commit -m "Actualización HLS $(date)"
+          git add output/*.m3u8 || echo "No hay archivos para agregar"
+          git commit -m "Actualización HLS $(date)" || echo "Sin cambios"
           git push
