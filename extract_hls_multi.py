@@ -1,16 +1,17 @@
 import asyncio
+import subprocess
 from playwright.async_api import async_playwright
 
 INPUT_FILE = "hls_input.txt"
 OUTPUT_FILE = "hls_links.txt"
 M3U_FILE = "playlist.m3u"
 
-async def process_url(playwright, url, video_id):
+async def process_with_playwright(playwright, url, video_id):
     browser = await playwright.chromium.launch(headless=True)
     context = await browser.new_context()
     page = await context.new_page()
 
-    print(f"[INFO] Procesando URL: {url}")
+    print(f"[INFO] Procesando URL con Playwright: {url}")
     links = []
 
     def handle_response(response):
@@ -19,17 +20,16 @@ async def process_url(playwright, url, video_id):
             links.append(u)
 
     page.on("response", handle_response)
-
     await page.goto(url, wait_until="domcontentloaded")
 
-    # Aceptar cookies si aparece el botón
+    # Intentar aceptar cookies
     try:
         await page.click('button:has-text("Aceptar")', timeout=5000)
         print("[INFO] Aceptadas cookies")
     except:
         pass
 
-    # Hacer clic en Play
+    # Intentar hacer clic en Play
     try:
         await page.click('button.ytp-large-play-button', timeout=5000)
         print("[INFO] Play iniciado")
@@ -50,6 +50,30 @@ async def process_url(playwright, url, video_id):
     await browser.close()
     return links
 
+def process_with_ytdlp(url):
+    print(f"[INFO] Intentando fallback con yt-dlp: {url}")
+    try:
+        result = subprocess.run(
+            [
+                "yt-dlp",
+                "--no-config",
+                "--no-cache-dir",
+                "--add-header", "User-Agent: Mozilla/5.0",
+                "--add-header", "Accept-Language: en-US,en;q=0.9",
+                "--geo-bypass",
+                "--print", "hls_manifest_url",
+                url
+            ],
+            capture_output=True, text=True
+        )
+        link = result.stdout.strip()
+        if link and "manifest.googlevideo.com" in link:
+            return [link]
+        return []
+    except Exception as e:
+        print(f"[ERROR] yt-dlp falló: {e}")
+        return []
+
 async def main():
     with open(INPUT_FILE, "r") as f:
         urls = [u.strip() for u in f if u.strip()]
@@ -58,7 +82,14 @@ async def main():
     async with async_playwright() as p:
         for url in urls:
             video_id = url.split("v=")[-1]
-            links = await process_url(p, url, video_id)
+
+            # Primero Playwright
+            links = await process_with_playwright(p, url, video_id)
+
+            # Si no encuentra nada, usar yt-dlp
+            if not links:
+                links = process_with_ytdlp(url)
+
             if links:
                 print(f"[INFO] Encontrados {len(links)} enlaces en {url}")
                 all_links.extend(links)
