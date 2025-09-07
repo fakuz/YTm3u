@@ -1,31 +1,32 @@
-name: Extraer HLS YouTube
+name: Generate HLS from YouTube
 
 on:
   schedule:
     - cron: "0 * * * *"  # Cada hora
-  workflow_dispatch:
+  workflow_dispatch:  # Permite ejecución manual
 
 jobs:
-  extract:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Clonar repo
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Instalar dependencias
         run: |
-          pip install yt-dlp playwright
-          playwright install chromium
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          pip install yt-dlp
 
       - name: Ejecutar script
         run: |
-          echo "[INFO] Ejecutando extract_hls_multi.py"
-          python3 extract_hls_multi.py
+          echo "[INFO] Ejecutando generate_hls.py"
+          python3 generate_hls.py
 
-      - name: Subir resultados
+      - name: Commit y push resultados
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add hls_links.txt playlist.m3u source_*.html
-          git commit -m "Actualización automática"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add output/*.m3u8
+          git commit -m "Actualización HLS $(date)"
           git push
