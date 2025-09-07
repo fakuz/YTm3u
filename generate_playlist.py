@@ -15,6 +15,7 @@ def get_m3u8_link(youtube_url):
         print(f"[INFO] Intento {attempt} para {youtube_url}...")
         try:
             options = Options()
+            options.binary_location = "/usr/bin/chromium-browser"  # Importante para Actions
             options.add_argument("--headless")
             options.add_argument("--disable-gpu")
             options.add_argument("--no-sandbox")
@@ -23,16 +24,15 @@ def get_m3u8_link(youtube_url):
             driver = webdriver.Chrome(options=options)
             driver.get(PAGE_URL)
 
-            # Esperar que cargue el formulario
-            time.sleep(3)
+            time.sleep(3)  # Espera inicial para que cargue el formulario
 
-            # Buscar el input del formulario
+            # Encontrar input y enviar link
             input_box = driver.find_element(By.NAME, "url")
             input_box.clear()
             input_box.send_keys(youtube_url)
             input_box.send_keys(Keys.RETURN)
 
-            # Esperar hasta que aparezca el link .m3u8
+            # Esperar hasta que aparezca un link .m3u8 en el HTML
             start_time = time.time()
             m3u8_link = None
             while time.time() - start_time < WAIT_TIME:
