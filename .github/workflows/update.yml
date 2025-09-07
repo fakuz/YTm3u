@@ -1,52 +1,31 @@
-name: Extract HLS Links with Playwright
+name: Extraer HLS YouTube
 
 on:
   schedule:
-    - cron: "0 * * * *"   # Cada hora
+    - cron: "0 * * * *"  # Cada hora
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   extract:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
+      - name: Clonar repo
         uses: actions/checkout@v3
 
-      - name: Instalar Python y Playwright
+      - name: Instalar dependencias
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 python3-pip
           pip install playwright
-          playwright install --with-deps chromium
+          playwright install chromium
 
       - name: Ejecutar script
         run: |
           echo "[INFO] Ejecutando extract_hls_multi.py"
           python3 extract_hls_multi.py
 
-      - name: Mostrar archivos generados
+      - name: Subir resultados
         run: |
-          echo "[INFO] Archivos generados:"
-          ls -lh source_*.html playlist.m3u 2>/dev/null || echo "[INFO] No se generaron archivos."
-
-      - name: Commit y push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-
-          if ls source_*.html 1> /dev/null 2>&1; then
-            git add source_*.html
-          fi
-          if [ -f playlist.m3u ]; then
-            git add playlist.m3u
-          fi
-
-          git status
-          git commit -m "Actualizar resultados ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
-          git push origin HEAD:${GITHUB_REF#refs/heads/}
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add hls_links.txt playlist.m3u source_*.html
+          git commit -m "Actualización automática"
+          git push
