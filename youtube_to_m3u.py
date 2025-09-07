@@ -6,7 +6,7 @@ INPUT_FILE = "channels.txt"
 OUTPUT_FILE = "playlist.m3u8"
 
 async def get_hls_url(playwright, youtube_url):
-    browser = await playwright.chromium.launch(headless=True)
+    browser = await playwright.chromium.launch(headless=True, args=["--autoplay-policy=no-user-gesture-required"])
     context = await browser.new_context()
     page = await context.new_page()
 
@@ -15,14 +15,32 @@ async def get_hls_url(playwright, youtube_url):
     async def handle_request(request):
         nonlocal hls_url
         if "manifest.googlevideo.com/api/manifest/hls_variant" in request.url:
-            hls_url = request.url
+            # Asegurar que sea la versión con todas las calidades
+            if "playlist_type=LIVE" in request.url or "playlist_type=DVR" in request.url:
+                hls_url = request.url
 
     context.on("request", handle_request)
 
     print(f"[INFO] Abriendo {youtube_url}")
     await page.goto(youtube_url)
+    
+    # Iniciar reproducción forzada
+    try:
+        await page.click('button[aria-label="Reproducir"]', timeout=5000)
+    except:
+        pass  # Si ya está reproduciendo, ignoramos
 
-    # Esperar hasta 30 segundos o hasta que se encuentre el HLS
+    await page.evaluate("""
+        () => {
+            const video = document.querySelector('video');
+            if (video) {
+                video.muted = true;
+                video.play();
+            }
+        }
+    """)
+
+    # Esperar hasta 30s o hasta que aparezca el HLS
     for _ in range(30):
         if hls_url:
             break
