@@ -1,75 +1,52 @@
-import asyncio
-import re
-import os
-from urllib.parse import urlparse
-from playwright.async_api import async_playwright
+name: Extract HLS Links with Playwright
 
-INPUT_FILE = "input.txt"
-OUTPUT_FILE = "playlist.m3u"
-PATTERN = r"https://manifest\.googlevideo\.com/api/manifest/hls_variant.*?file/index\.m3u"
+on:
+  schedule:
+    - cron: "0 * * * *"   # Cada hora
+  workflow_dispatch:
 
-def get_filename_from_url(url):
-    parsed = urlparse(url)
-    video_id = parsed.query.split("v=")[-1] if "v=" in parsed.query else parsed.path.split("/")[-1]
-    return f"source_{video_id}.html"
+permissions:
+  contents: write
 
-async def process_url(playwright, url):
-    browser = await playwright.chromium.launch(headless=True)
-    page = await browser.new_page()
-    print(f"[INFO] Abriendo: {url}")
+jobs:
+  extract:
+    runs-on: ubuntu-latest
 
-    try:
-        await page.goto(url, timeout=60000)
-        await page.wait_for_timeout(5000)  # Espera para que cargue el JS
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-        html = await page.content()
-        filename = get_filename_from_url(url)
-        abs_path = os.path.abspath(filename)
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(html)
-        print(f"[INFO] HTML guardado en: {abs_path} ({len(html)} caracteres)")
+      - name: Instalar Python y dependencias
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip install playwright
+          playwright install --with-deps chromium
 
-        matches = re.findall(PATTERN, html)
-        if matches:
-            print(f"[OK] Encontrado fragmento en {url}")
-            return matches
-        else:
-            print(f"[WARN] No se encontró fragmento en {url}")
-            return []
-    except Exception as e:
-        print(f"[ERROR] Error procesando {url}: {e}")
-        return []
-    finally:
-        await browser.close()
+      - name: Ejecutar script
+        run: |
+          echo "[INFO] Ejecutando extract_hls_playwright.py"
+          python3 extract_hls_playwright.py
 
-async def main():
-    if not os.path.exists(INPUT_FILE):
-        print(f"[ERROR] No existe {INPUT_FILE}")
-        return
+      - name: Mostrar archivos generados
+        run: |
+          echo "[INFO] Archivos generados:"
+          ls -lh source_*.html playlist.m3u 2>/dev/null || echo "[INFO] No se generaron archivos."
 
-    with open(INPUT_FILE, "r", encoding="utf-8") as f:
-        urls = [line.strip() for line in f if line.strip()]
+      - name: Commit y push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
 
-    if not urls:
-        print("[ERROR] input.txt está vacío.")
-        return
+          if ls source_*.html 1> /dev/null 2>&1; then
+            git add source_*.html
+          fi
+          if [ -f playlist.m3u ]; then
+            git add playlist.m3u
+          fi
 
-    all_links = []
-
-    async with async_playwright() as p:
-        for url in urls:
-            links = await process_url(p, url)
-            all_links.extend(links)
-
-    if all_links:
-        abs_path = os.path.abspath(OUTPUT_FILE)
-        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-            f.write("#EXTM3U\n")
-            for link in all_links:
-                f.write(f"{link}\n")
-        print(f"[INFO] Playlist guardada en: {abs_path}")
-    else:
-        print("[INFO] No se encontraron enlaces en ninguna URL.")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+          git status
+          git commit -m "Actualizar resultados ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
