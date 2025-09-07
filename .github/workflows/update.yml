@@ -10,16 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Instalar dependencias
         run: |
           sudo apt-get update && sudo apt-get install -y python3 python3-pip
           pip install streamlink
+
       - name: Generar playlist
-        run: python3 generate_playlist.py
+        run: python3 youtube_to_m3u.py
+
       - name: Commit & Push cambios
         run: |
           git config --global user.email "bot@example.com"
           git config --global user.name "GitHub Bot"
           git add playlist.m3u8
-          git commit -m "Actualizar playlist"
+          git commit -m "Actualizar playlist (YouTube)"
           git push
