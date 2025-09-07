@@ -1,13 +1,14 @@
-name: Extract HLS from View Source
+name: Extract HLS Debug
 
 on:
   schedule:
-    - cron: "0 * * * *"  # Cada hora
-  workflow_dispatch:      # Permite ejecución manual
+    - cron: "0 * * * *"   # Cada hora
+  workflow_dispatch:       # Permite ejecución manual
 
 jobs:
   extract:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -18,14 +19,15 @@ jobs:
           sudo apt-get install -y python3 python3-pip
           pip install requests
 
-      - name: Ejecutar script
+      - name: Ejecutar script de depuración
         run: |
-          python3 extract_hls_viewsource.py
+          echo "[INFO] Ejecutando extract_hls_debug.py"
+          python3 extract_hls_debug.py
 
-      - name: Subir archivos al repo
+      - name: Confirmar resultados y subir cambios
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add playlist.m3u source.html
-          git commit -m "Actualizar playlist y guardar código fuente ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
+          git add playlist.m3u source.html source.html.txt || true
+          git commit -m "Actualizar resultados ($(date '+%Y-%m-%d %H:%M'))" || echo "No hay cambios"
           git push
