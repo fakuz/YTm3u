@@ -15,7 +15,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip ffmpeg
-          pip install --upgrade streamlink
+          pip install --upgrade streamlink yt-dlp
 
       - name: Generar playlist
         run: python3 youtube_to_m3u.py
@@ -25,5 +25,5 @@ jobs:
           git config --global user.email "bot@example.com"
           git config --global user.name "GitHub Bot"
           git add playlist.m3u8
-          git commit -m "Actualizar playlist (YouTube)"
+          git commit -m "Actualizar playlist (YouTube con fallback)"
           git push
