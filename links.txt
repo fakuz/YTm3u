@@ -1,8 +1,6 @@
-Telefe|https://www.youtube.com/watch?v=cb12KmMMDJA
-Canal 9|https://www.youtube.com/watch?v=qvCox4R_jmY
-C5N|https://www.youtube.com/watch?v=IkyP6IqfS2E
-TN|https://www.youtube.com/watch?v=ksR2L02Z29A
-A24|https://www.youtube.com/watch?v=7OuXhFeh1t8
-Cronica TV|https://www.youtube.com/watch?v=2QqQxD2wJ7Q
-America TV|https://www.youtube.com/watch?v=1qzGxvQ_JPY
-Canal 26|https://www.youtube.com/watch?v=DFsVTF6q-Qo
+TN|https://www.youtube.com/watch?v=cb12KmMMDJA
+C5N|https://www.youtube.com/watch?v=Uo-ziJhrTvI
+A24|https://www.youtube.com/watch?v=ArKbAx1K-2U
+Cronica TV|https://www.youtube.com/watch?v=avly0uwZzOE
+Canal 26|https://www.youtube.com/watch?v=OLMiTr2OUeU
+LN +|https://www.youtube.com/watch?v=5f__Ls4_VYQ
