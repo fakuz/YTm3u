@@ -11,7 +11,8 @@ OUTPUT_FILE = "playlist.m3u"
 
 def get_hls_url_with_chrome(url: str) -> str:
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")  # Mantener headless para GitHub Actions
+    chrome_options.binary_location = "/usr/bin/chromium-browser"  # Ruta para GitHub Actions
+    chrome_options.add_argument("--headless=new")  # Modo headless para CI/CD
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
@@ -27,11 +28,15 @@ def get_hls_url_with_chrome(url: str) -> str:
         src = driver.page_source
         src = src.replace("\\/", "/")
 
-        # Regex para encontrar el link HLS
-        match = re.findall(r"https://manifest\.googlevideo\.com/api/manifest/hls_variant/[^\"']+", src)
-        if match:
-            # Si hay varios, elegir el de mayor resolución (maxh más alto)
-            best = sorted(match, key=lambda x: int(re.search(r"maxh/(\d+)", x).group(1)) if re.search(r"maxh/(\d+)", x) else 0, reverse=True)[0]
+        # Buscar todas las URLs de HLS
+        matches = re.findall(r"https://manifest\.googlevideo\.com/api/manifest/hls_variant/[^\"']+", src)
+        if matches:
+            # Ordenar por calidad (maxh más alto)
+            best = sorted(
+                matches,
+                key=lambda x: int(re.search(r"maxh/(\d+)", x).group(1)) if re.search(r"maxh/(\d+)", x) else 0,
+                reverse=True
+            )[0]
             return best
         else:
             return None
