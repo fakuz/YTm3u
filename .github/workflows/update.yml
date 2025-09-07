@@ -14,7 +14,8 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install yt-dlp
+          pip install yt-dlp playwright
+          playwright install chromium
 
       - name: Ejecutar script
         run: |
@@ -25,6 +26,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add hls_links.txt playlist.m3u
+          git add hls_links.txt playlist.m3u source_*.html
           git commit -m "Actualización automática"
           git push
