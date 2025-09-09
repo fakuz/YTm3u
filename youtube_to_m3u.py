@@ -1,7 +1,29 @@
-import subprocess
+import asyncio
+from playwright.async_api import async_playwright
 
 CHANNELS_FILE = "channels.txt"
 OUTPUT_FILE = "playlist.m3u"
+
+async def get_stream_url(url):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context()
+        page = await context.new_page()
+
+        stream_url = None
+
+        async def handle_request(request):
+            nonlocal stream_url
+            if "googlevideo.com/videoplayback" in request.url and "live=1" in request.url:
+                stream_url = request.url
+
+        page.on("request", handle_request)
+
+        await page.goto(url)
+        await page.wait_for_timeout(15000)  # Espera 15s para capturar las peticiones
+
+        await browser.close()
+        return stream_url
 
 def load_channels():
     channels = {}
@@ -12,22 +34,20 @@ def load_channels():
                 channels[name] = url
     return channels
 
-def get_hls_link(url):
-    cmd = ["yt-dlp", "-g", "-f", "best", url]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
-    return result.stdout.strip()
-
-def generate_m3u(channels):
+async def main():
+    channels = load_channels()
     content = "#EXTM3U\n"
     for name, url in channels.items():
-        print(f"Obteniendo link para {name}...")
-        link = get_hls_link(url)
+        print(f"Obteniendo stream para {name}...")
+        link = await get_stream_url(url)
         if link:
+            print(f"✅ {name} -> {link}")
             content += f'#EXTINF:-1 tvg-name="{name}" group-title="YouTube",{name}\n{link}\n'
+        else:
+            print(f"❌ No se encontró stream para {name}")
+
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(content)
 
 if __name__ == "__main__":
-    channels = load_channels()
-    generate_m3u(channels)
-    print("✅ Playlist actualizada.")
+    asyncio.run(main())
