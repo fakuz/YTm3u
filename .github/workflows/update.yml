@@ -1,43 +1,27 @@
-name: Actualizar playlist M3U
+name: Update YouTube HLS
 
 on:
   schedule:
-    - cron: "0 */5 * * *" # Cada 5 horas
-  workflow_dispatch:
+    - cron: "0 */6 * * *"  # Cada 6 horas
+  workflow_dispatch: # Permite ejecutarlo manualmente
 
 jobs:
-  build:
+  update-m3u:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Clonar repositorio
-      uses: actions/checkout@v3
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
 
-    - name: Configurar Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Instalar yt-dlp
+        run: sudo apt-get install -y yt-dlp
 
-    - name: Instalar dependencias
-      run: |
-        pip install --upgrade yt-dlp playwright
-        playwright install chromium
+      - name: Ejecutar script
+        run: python3 youtube_to_m3u.py
 
-    - name: Ejecutar script
-      run: |
-        python3 youtube_to_m3u.py
-
-    - name: Verificar cambios en playlist
-      id: git-check
-      run: |
-        if git diff --quiet playlist.m3u; then
-          echo "changed=false" >> $GITHUB_OUTPUT
-        else
-          echo "changed=true" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Commit y push de la playlist
-      if: steps.git-check.outputs.changed == 'true'
-      run: |
-        git config --global user.name "github-actions"
-        git config --global user.email "actions@g
+      - name: Commit y push
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add playlist.m3u
+          git commit -m "Actualizar enlace HLS"
+          git push
