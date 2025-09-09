@@ -12,15 +12,26 @@ async def get_stream_url(url):
 
         stream_url = None
 
-        async def handle_request(request):
+        async def handle_response(response):
             nonlocal stream_url
-            if "googlevideo.com/videoplayback" in request.url and "live=1" in request.url:
-                stream_url = request.url
+            if "googlevideo.com/videoplayback" in response.url and "live=1" in response.url:
+                stream_url = response.url
 
-        page.on("request", handle_request)
+        page.on("response", handle_response)
 
         await page.goto(url)
-        await page.wait_for_timeout(15000)  # 15s para capturar el enlace
+        # Intentar hacer click en el botón de play
+        try:
+            await page.click("button.ytp-large-play-button", timeout=5000)
+        except:
+            pass  # Si no hay botón, no pasa nada
+
+        # Esperar hasta 40s o hasta que encontremos el enlace
+        for _ in range(40):
+            if stream_url:
+                break
+            await asyncio.sleep(1)
+
         await browser.close()
         return stream_url
 
@@ -37,10 +48,10 @@ async def main():
     channels = load_channels()
     content = "#EXTM3U\n"
     for name, url in channels.items():
-        print(f"Obteniendo stream para {name}...")
+        print(f"🔍 Buscando stream para {name}...")
         link = await get_stream_url(url)
         if link:
-            print(f"✅ {name} -> {link}")
+            print(f"✅ {name}: {link}")
             content += f'#EXTINF:-1 tvg-name="{name}" group-title="YouTube",{name}\n{link}\n'
         else:
             print(f"❌ No se encontró stream para {name}")
