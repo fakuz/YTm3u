@@ -1,82 +1,59 @@
 import asyncio
-import subprocess
 from playwright.async_api import async_playwright
+import re
+import time
 
-CHANNELS_FILE = "channels.txt"
-OUTPUT_FILE = "playlist.m3u"
+# Lista de canales con su URL de YouTube
+channels = {
+    "TN": "https://www.youtube.com/watch?v=Uo-ziJhrTvI",
+    "C5N": "https://www.youtube.com/watch?v=ArKbAx1K-2U",
+    "A24": "https://www.youtube.com/watch?v=avly0uwZzOE",
+    "Cronica": "https://www.youtube.com/watch?v=OLMiTr2OUeU",
+    "Canal 26": "https://www.youtube.com/watch?v=5f__Ls4_VYQ"
+}
 
-async def get_stream_url(url):
+async def get_stream_url(channel_name, youtube_url):
+    print(f"Obteniendo URL para {channel_name}...")
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context()
-        page = await context.new_page()
-
+        page = await browser.new_page()
+        await page.goto(youtube_url)
+        
         stream_url = None
-
-        async def handle_response(response):
+        start_time = time.time()
+        timeout = 30  # segundos
+        
+        # Escuchar las peticiones de red
+        async def on_request(request):
             nonlocal stream_url
-            if "googlevideo.com/videoplayback" in response.url:
-                if "itag=" in response.url or "mime=" in response.url:
-                    stream_url = response.url
+            url = request.url
+            if "videoplayback?" in url and "mime=video" in url:
+                stream_url = url
+                print(f"✅ Encontrado para {channel_name}: {stream_url}")
 
-        page.on("response", handle_response)
+        page.on("request", on_request)
 
-        await page.goto(url)
-        # Intentar hacer click en el botón Play para forzar el inicio
-        try:
-            await page.click("button.ytp-large-play-button", timeout=5000)
-        except:
-            pass
-
-        # Esperar hasta 40 segundos o hasta capturar la URL
-        for _ in range(40):
-            if stream_url:
-                break
+        # Esperar hasta encontrar el enlace o agotar el tiempo
+        while stream_url is None and (time.time() - start_time) < timeout:
             await asyncio.sleep(1)
-
+        
         await browser.close()
         return stream_url
 
-def get_reproducible_url(original_url):
-    try:
-        result = subprocess.run(
-            ["yt-dlp", "--get-url", "-f", "best", original_url],
-            capture_output=True,
-            text=True
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
-        else:
-            return original_url
-    except Exception as e:
-        print(f"Error ejecutando yt-dlp: {e}")
-        return original_url
-
-def load_channels():
-    channels = {}
-    with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            if "|" in line:
-                name, url = line.strip().split("|", 1)
-                channels[name] = url
-    return channels
-
-async def main():
-    channels = load_channels()
-    content = "#EXTM3U\n"
+async def generate_playlist():
+    playlist_lines = ["#EXTM3U"]
     for name, url in channels.items():
-        print(f"🔍 Buscando stream para {name}...")
-        link = await get_stream_url(url)
-        if link:
-            print(f"✅ Capturado: {link}")
-            reproducible = get_reproducible_url(link)
-            print(f"🎯 URL final reproducible: {reproducible}")
-            content += f'#EXTINF:-1 tvg-name="{name}" group-title="YouTube",{name}\n{reproducible}\n'
+        stream_url = await get_stream_url(name, url)
+        if stream_url:
+            playlist_lines.append(f"#EXTINF:-1,{name}")
+            playlist_lines.append(stream_url)
         else:
             print(f"❌ No se encontró stream para {name}")
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write(content)
+    # Guardar en archivo
+    with open("playlist.m3u", "w", encoding="utf-8") as f:
+        f.write("\n".join(playlist_lines))
+    print("✅ Playlist actualizada correctamente (playlist.m3u)")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(generate_playlist())
