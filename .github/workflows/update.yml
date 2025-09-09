@@ -1,0 +1,30 @@
+name: Update YouTube M3U
+
+on:
+  schedule:
+    - cron: "0 */5 * * *"  # Cada 5 horas
+  workflow_dispatch:
+
+jobs:
+  update-playlist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install yt-dlp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yt-dlp
+
+      - name: Run Python script
+        run: |
+          python3 youtube_to_m3u.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add playlist.m3u
+          git commit -m "Auto-update playlist" || echo "No changes to commit"
+          git push
