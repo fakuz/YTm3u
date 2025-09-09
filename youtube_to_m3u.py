@@ -20,8 +20,7 @@ async def get_stream_url(url):
         page.on("request", handle_request)
 
         await page.goto(url)
-        await page.wait_for_timeout(15000)  # Espera 15s para capturar las peticiones
-
+        await page.wait_for_timeout(15000)  # 15s para capturar el enlace
         await browser.close()
         return stream_url
 
