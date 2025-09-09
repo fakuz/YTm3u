@@ -1,16 +1,16 @@
 import asyncio
 from playwright.async_api import async_playwright
-import re
 import time
 
-# Lista de canales con su URL de YouTube
-channels = {
-    "TN": "https://www.youtube.com/watch?v=Uo-ziJhrTvI",
-    "C5N": "https://www.youtube.com/watch?v=ArKbAx1K-2U",
-    "A24": "https://www.youtube.com/watch?v=avly0uwZzOE",
-    "Cronica": "https://www.youtube.com/watch?v=OLMiTr2OUeU",
-    "Canal 26": "https://www.youtube.com/watch?v=5f__Ls4_VYQ"
-}
+# Leer canales desde channels.txt
+def load_channels(filename="channels.txt"):
+    channels = {}
+    with open(filename, "r", encoding="utf-8") as f:
+        for line in f:
+            if "|" in line:
+                name, url = line.strip().split("|", 1)
+                channels[name] = url
+    return channels
 
 async def get_stream_url(channel_name, youtube_url):
     print(f"Obteniendo URL para {channel_name}...")
@@ -41,6 +41,7 @@ async def get_stream_url(channel_name, youtube_url):
         return stream_url
 
 async def generate_playlist():
+    channels = load_channels()
     playlist_lines = ["#EXTM3U"]
     for name, url in channels.items():
         stream_url = await get_stream_url(name, url)
