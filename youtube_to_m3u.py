@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 from playwright.async_api import async_playwright
 
 CHANNELS_FILE = "channels.txt"
@@ -14,19 +15,20 @@ async def get_stream_url(url):
 
         async def handle_response(response):
             nonlocal stream_url
-            if "googlevideo.com/videoplayback" in response.url and "live=1" in response.url:
-                stream_url = response.url
+            if "googlevideo.com/videoplayback" in response.url:
+                if "itag=" in response.url or "mime=" in response.url:
+                    stream_url = response.url
 
         page.on("response", handle_response)
 
         await page.goto(url)
-        # Intentar hacer click en el botón de play
+        # Intentar hacer click en el botón Play para forzar el inicio
         try:
             await page.click("button.ytp-large-play-button", timeout=5000)
         except:
-            pass  # Si no hay botón, no pasa nada
+            pass
 
-        # Esperar hasta 40s o hasta que encontremos el enlace
+        # Esperar hasta 40 segundos o hasta capturar la URL
         for _ in range(40):
             if stream_url:
                 break
@@ -34,6 +36,21 @@ async def get_stream_url(url):
 
         await browser.close()
         return stream_url
+
+def get_reproducible_url(original_url):
+    try:
+        result = subprocess.run(
+            ["yt-dlp", "--get-url", "-f", "best", original_url],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            return original_url
+    except Exception as e:
+        print(f"Error ejecutando yt-dlp: {e}")
+        return original_url
 
 def load_channels():
     channels = {}
@@ -51,8 +68,10 @@ async def main():
         print(f"🔍 Buscando stream para {name}...")
         link = await get_stream_url(url)
         if link:
-            print(f"✅ {name}: {link}")
-            content += f'#EXTINF:-1 tvg-name="{name}" group-title="YouTube",{name}\n{link}\n'
+            print(f"✅ Capturado: {link}")
+            reproducible = get_reproducible_url(link)
+            print(f"🎯 URL final reproducible: {reproducible}")
+            content += f'#EXTINF:-1 tvg-name="{name}" group-title="YouTube",{name}\n{reproducible}\n'
         else:
             print(f"❌ No se encontró stream para {name}")
 
