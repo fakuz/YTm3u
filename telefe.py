@@ -1,27 +1,19 @@
-import requests
-import re
+import datetime
 
-URL_API = "https://edge-mitelefe.akamaized.net/live/telefehd/index.m3u8"
+def obtener_url():
+    # 🎯 Acá iría la lógica de extracción (API, scraping, etc.)
+    # Por ahora lo dejamos fijo como ejemplo:
+    return "https://telefeappmitelefe1.akamaized.net/hls/live/2037985/appmitelefe/TOK/master.m3u8?hdnea=st=1757469189~exp=1757476389~acl=/hls/live/2037985/appmitelefe/TOK/*~hmac=fae55fd45c45757f6fca4238e8598f0d9ff5cf0efadde6b572374d08ccc9674d"
 
-def obtener_m3u8():
-    try:
-        r = requests.get(URL_API, timeout=10)
-        texto = r.text
-        # Buscar cualquier URL que tenga .m3u8 (aunque tenga ?...)
-        match = re.search(r"https://[^\s\"']+\.m3u8[^\s\"']*", texto)
-        if match:
-            return match.group(0)
-    except Exception as e:
-        print(f"⚠️ Error al obtener desde la API: {e}")
-    return None
+url = obtener_url()
 
-if __name__ == "__main__":
-    url = obtener_m3u8()
-    if url:
-        with open("telefe.m3u", "w", encoding="utf-8") as f:
-            f.write("#EXTM3U\n")
-            f.write("#EXTINF:-1,Telefe\n")
-            f.write(url + "\n")
-        print(f"✅ Guardado link válido: {url}")
-    else:
-        print("⚠️ No se encontró ningún link válido.")
+if url and url.endswith(".m3u8"):
+    contenido = f"""#EXTM3U
+#EXTINF:-1 tvg-logo="https://telefe.com/logo.png" group-title="Argentina", Telefe
+{url}
+"""
+    with open("telefe.m3u", "w", encoding="utf-8") as f:
+        f.write(contenido)
+    print(f"✅ Archivo M3U generado correctamente a las {datetime.datetime.now()}")
+else:
+    print("⚠️ No se generó el archivo M3U porque no hubo link válido.")
