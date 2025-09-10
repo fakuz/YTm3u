@@ -1,9 +1,9 @@
 name: Generar Telefe M3U
 
 on:
-  workflow_dispatch:   # Permite ejecutarlo a mano
+  workflow_dispatch:   # Permite ejecutarlo a mano desde Actions
   schedule:
-    - cron: "0 */4 * * *"  # cada 4 horas
+    - cron: "0 */4 * * *"  # Cada 4 horas
 
 jobs:
   build:
