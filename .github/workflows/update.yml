@@ -2,28 +2,29 @@ name: Actualizar Telefe M3U
 
 on:
   schedule:
-    - cron: "0 */4 * * *"   # ⏰ Cada 4 horas
-  workflow_dispatch:        # Permite ejecutarlo manualmente también
+    - cron: "0 */4 * * *"   # ⏰ cada 4 horas
+  workflow_dispatch:        # ▶️ permitir ejecutarlo manualmente
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
+      - name: Checkout del repositorio
         uses: actions/checkout@v3
 
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.x"
 
       - name: Ejecutar script Telefe
         run: python telefe.py
 
-      - name: Commit y Push cambios
+      - name: Commit y Push del archivo M3U
         run: |
           git config --global user.name "fakuz"
           git config --global user.email "fakuz@users.noreply.github.com"
           git add telefe.m3u
-          git commit -m "⏰ Auto-actualización Telefe M3U"
+          git commit -m "🔄 Actualización automática Telefe.m3u"
           git push
