@@ -12,7 +12,7 @@ HEADERS = {
 def obtener_url():
     r = requests.get(API_URL, headers=HEADERS)
     r.raise_for_status()
-    return r.text.strip()   # La API devuelve directamente el link firmado
+    return r.text.strip()   # La API devuelve el link firmado de Akamai
 
 def guardar_m3u(url):
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
@@ -21,12 +21,9 @@ def guardar_m3u(url):
         f.write(url + "\n")
 
 if __name__ == "__main__":
-    try:
-        url = obtener_url()
-        if url.startswith("http"):
-            guardar_m3u(url)
-            print(f"✅ Guardado con éxito: {url}")
-        else:
-            print("⚠️ La API no devolvió un link válido.")
-    except Exception as e:
-        print(f"❌ Error al obtener el link de Telefe: {e}")
+    url = obtener_url()
+    if url.startswith("http"):
+        guardar_m3u(url)
+        print(f"✅ Link guardado en {OUTPUT_FILE}: {url}")
+    else:
+        print("⚠️ La API no devolvió una URL válida, no se actualizó el archivo.")
