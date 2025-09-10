@@ -9,12 +9,12 @@ HEADERS = {
     "Referer": "https://telefe.com/"
 }
 
-def obtener_m3u8():
+def obtener_url():
     r = requests.get(API_URL, headers=HEADERS)
     r.raise_for_status()
-    return r.text.strip()  # La API devuelve directamente la URL firmada
+    return r.text.strip()   # devuelve el link firmado
 
-def guardar_m3u8(url):
+def guardar_m3u(url):
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
         f.write('#EXTINF:-1 tvg-logo="https://telefe.com/logo.png" group-title="Argentina", Telefe\n')
@@ -22,11 +22,11 @@ def guardar_m3u8(url):
 
 if __name__ == "__main__":
     try:
-        url = obtener_m3u8()
+        url = obtener_url()
         if url.startswith("http"):
-            guardar_m3u8(url)
-            print(f"✅ Archivo {OUTPUT_FILE} actualizado con éxito.")
+            guardar_m3u(url)
+            print(f"✅ Guardado con éxito: {url}")
         else:
-            print("⚠️ La API no devolvió un link válido. No se actualizó el archivo.")
+            print("⚠️ La API no devolvió una URL válida.")
     except Exception as e:
-        print(f"❌ Error al obtener el link: {e}")
+        print(f"❌ Error al obtener el link de la API: {e}")
