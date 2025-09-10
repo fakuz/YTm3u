@@ -1,3 +1,3 @@
 #EXTM3U
 #EXTINF:-1 tvg-logo="https://telefe.com/logo.png" group-title="Argentina", Telefe
-# No se pudo obtener ni recuperar un link válido
+https://edge-mitelefe.akamaized.net/live/telefehd/index.m3u8
