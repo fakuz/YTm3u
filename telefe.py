@@ -11,12 +11,8 @@ HEADERS = {
 
 def obtener_m3u8():
     r = requests.get(API_URL, headers=HEADERS)
-    real_url = r.text.strip()  # respuesta cruda (el m3u8 con token)
-
-    if not real_url.startswith("http"):
-        raise ValueError(f"Respuesta inesperada: {real_url}")
-
-    return real_url
+    real_url = r.text.strip()
+    return real_url  # No validamos, solo lo devolvemos
 
 def guardar_m3u8(url):
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
@@ -25,6 +21,10 @@ def guardar_m3u8(url):
         f.write(url + "\n")
 
 if __name__ == "__main__":
-    url = obtener_m3u8()
-    guardar_m3u8(url)
-    print(f"Archivo {OUTPUT_FILE} generado con éxito.")
+    try:
+        url = obtener_m3u8()
+        guardar_m3u8(url)
+        print(f"Archivo {OUTPUT_FILE} generado con éxito.")
+    except Exception as e:
+        print(f"⚠️ Error: {e}")
+        print("Se mantiene el último telefe.m3u válido.")
