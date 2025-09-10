@@ -1,21 +1,40 @@
+import requests
 import re
-from pathlib import Path
 
-# Simulación: acá iría el contenido real de la API de Telefe
-respuesta_api = """
-https://telefeappmitelefe1.akamaized.net/hls/live/2037985/appmitelefe/TOK/master.m3u8?hdnea=st=1757469189~exp=1757476389~acl=/hls/live/2037985/appmitelefe/TOK/*~hmac=fae55fd45c45757f6fca4238e8598f0d9ff5cf0efadde6b572374d08ccc9674d
+def obtener_url():
+    api_url = "https://telefe.com/Api/Videos/GetSourceUrl/694564/0/HLS?.m3u8"
+
+    try:
+        r = requests.get(api_url, headers={"User-Agent": "Mozilla/5.0"})
+        texto = r.text
+
+        # Buscar cualquier link que termine en .m3u8 (con token o sin)
+        match = re.search(r"https?://[^\s'\"]+\.m3u8[^\s'\"]*", texto)
+        if match:
+            return match.group(0)
+        else:
+            print("⚠️ No se encontró ningún link .m3u8 en la respuesta.")
+            return None
+
+    except Exception as e:
+        print(f"❌ Error al obtener desde la API de Telefe: {e}")
+        return None
+
+
+def generar_m3u(url):
+    if not url:
+        print("⚠️ No se generó el archivo M3U porque no hubo link válido.")
+        return
+
+    contenido = f"""#EXTM3U
+#EXTINF:-1 tvg-logo="https://telefe.com/logo.png" group-title="Argentina", Telefe
+{url}
 """
+    with open("telefe.m3u", "w", encoding="utf-8") as f:
+        f.write(contenido)
+    print("✅ Archivo telefe.m3u actualizado correctamente.")
 
-# Buscar cualquier URL que termine en .m3u8 (aunque tenga token después)
-match = re.search(r"https://[^\s]+\.m3u8[^\s]*", respuesta_api)
 
-if match:
-    link = match.group(0).strip()
-    contenido_m3u = f"""#EXTM3U
-#EXTINF:-1 tvg-id="telefe" tvg-name="Telefe" group-title="Argentina",Telefe
-{link}
-"""
-    Path("telefe.m3u").write_text(contenido_m3u, encoding="utf-8")
-    print("✅ Archivo telefe.m3u generado con link válido")
-else:
-    print("⚠️ No se encontró ningún link .m3u8 en la respuesta.")
+if __name__ == "__main__":
+    url = obtener_url()
+    generar_m3u(url)
