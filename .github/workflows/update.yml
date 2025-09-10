@@ -1,22 +1,21 @@
-name: Generar Telefe M3U
+name: Generar M3U Telefe
 
 on:
-  workflow_dispatch:   # Permite ejecutarlo a mano desde Actions
   schedule:
-    - cron: "0 */4 * * *"  # Cada 4 horas
+    - cron: "0 */4 * * *"   # 🔄 Cada 4 horas
+  workflow_dispatch:         # Permite lanzarlo manualmente
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: '3.13'
 
       - name: Instalar dependencias
         run: pip install requests
@@ -24,14 +23,10 @@ jobs:
       - name: Ejecutar script Telefe
         run: python telefe.py
 
-      - name: Commit cambios si hay modificaciones
+      - name: Commit & Push cambios
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          if [[ `git status --porcelain` ]]; then
-            git add telefe.m3u
-            git commit -m "Actualizar Telefe.m3u $(date '+%Y-%m-%d %H:%M:%S')"
-            git push
-          else
-            echo "⚠️ No hubo cambios en telefe.m3u"
-          fi
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add telefe.m3u
+          git commit -m "Actualizar Telefe.m3u"
+          git push
