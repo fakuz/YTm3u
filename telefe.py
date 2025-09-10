@@ -1,32 +1,31 @@
-name: Actualizar Telefe M3U
+import requests
+import re
 
-on:
-  schedule:
-    - cron: "0 */4 * * *"  # cada 4 horas
-  workflow_dispatch:
+API_URL = "https://telefe.com/Api/Videos/GetSourceUrl/694564/0/HLS?.m3u8"
 
-jobs:
-  update-m3u:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+def obtener_url():
+    try:
+        r = requests.get(API_URL, timeout=10)
+        texto = r.text.strip()
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+        match = re.search(r"https://[^\s\"']+\.m3u8[^\s\"']*", texto)
+        if match:
+            return match.group(0)
+        else:
+            print("⚠️ No se encontró ningún link .m3u8 en la respuesta.")
+            return None
 
-      - name: Instalar dependencias
-        run: pip install requests
+    except Exception as e:
+        print(f"❌ Error al obtener desde la API de Telefe: {e}")
+        return None
 
-      - name: Ejecutar script Telefe
-        run: python telefe.py
-
-      - name: Commit y push de cambios
-        run: |
-          git config --global user.name "fakuz"
-          git config --global user.email "fakuz@users.noreply.github.com"
-          git add telefe.m3u
-          git commit -m "Actualizar telefe.m3u"
-          git push
+if __name__ == "__main__":
+    url = obtener_url()
+    if url:
+        with open("telefe.m3u", "w", encoding="utf-8") as f:
+            f.write("#EXTM3U\n")
+            f.write('#EXTINF:-1 tvg-logo="https://telefe.com/logo.png" group-title="Argentina", Telefe\n')
+            f.write(url + "\n")
+        print("✅ Archivo telefe.m3u actualizado con éxito.")
+    else:
+        print("⚠️ No se generó el archivo M3U porque no hubo link válido.")
