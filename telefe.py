@@ -11,16 +11,10 @@ OUTPUT_FILE = "telefe.m3u"
 
 def obtener_m3u8():
     r = requests.get(API_URL)
-    # No usamos raise_for_status porque Telefe devuelve link temporal con token
-    try:
-        data = r.json()  # API de Telefe devuelve JSON
-    except ValueError:
-        raise ValueError("La respuesta no fue JSON válido.")
+    real_url = r.text.strip()  # La API devuelve directamente el link .m3u8
 
-    real_url = data.get("Url") or data.get("url")
-
-    if not real_url:
-        raise ValueError("No se encontró la URL real en la respuesta.")
+    if not real_url.startswith("http"):
+        raise ValueError("No se encontró una URL válida en la respuesta.")
 
     return real_url
 
@@ -33,4 +27,4 @@ def guardar_m3u8(url):
 if __name__ == "__main__":
     url = obtener_m3u8()
     guardar_m3u8(url)
-    print(f"Archivo {OUTPUT_FILE} generado con éxito.")
+    print(f"Archivo {OUTPUT_FILE} generado con éxito: {url}")
