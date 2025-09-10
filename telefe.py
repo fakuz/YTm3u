@@ -1,20 +1,20 @@
 import requests
 
-# ID del video de Telefe
 VIDEO_ID = "694564"
-
-# Endpoint de la API
 API_URL = f"https://telefe.com/Api/Videos/GetSourceUrl/{VIDEO_ID}/0/HLS?.m3u8"
-
-# Archivo de salida
 OUTPUT_FILE = "telefe.m3u"
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "https://telefe.com/"
+}
+
 def obtener_m3u8():
-    r = requests.get(API_URL)
-    real_url = r.text.strip()  # La API devuelve directamente el link .m3u8
+    r = requests.get(API_URL, headers=HEADERS)
+    real_url = r.text.strip()  # respuesta cruda (el m3u8 con token)
 
     if not real_url.startswith("http"):
-        raise ValueError("No se encontró una URL válida en la respuesta.")
+        raise ValueError(f"Respuesta inesperada: {real_url}")
 
     return real_url
 
@@ -27,4 +27,4 @@ def guardar_m3u8(url):
 if __name__ == "__main__":
     url = obtener_m3u8()
     guardar_m3u8(url)
-    print(f"Archivo {OUTPUT_FILE} generado con éxito: {url}")
+    print(f"Archivo {OUTPUT_FILE} generado con éxito.")
