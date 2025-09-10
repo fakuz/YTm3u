@@ -1,6 +1,6 @@
 import requests
 
-VIDEO_ID = "694564"  # ID de Telefe en la API
+VIDEO_ID = "694564"  # ID fijo de Telefe
 API_URL = f"https://telefe.com/Api/Videos/GetSourceUrl/{VIDEO_ID}/0/HLS?.m3u8"
 OUTPUT_FILE = "telefe.m3u"
 
@@ -10,9 +10,10 @@ HEADERS = {
 }
 
 def obtener_url():
+    # ✅ Solo verificamos la API de Telefe
     r = requests.get(API_URL, headers=HEADERS)
-    r.raise_for_status()   # ✅ Solo validamos la API, no el .m3u8
-    return r.text.strip()  # La API devuelve directamente el link firmado
+    r.raise_for_status()  
+    return r.text.strip()  # Devuelve el link firmado
 
 def guardar_m3u(url):
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
@@ -24,6 +25,6 @@ if __name__ == "__main__":
     try:
         url = obtener_url()
         guardar_m3u(url)
-        print("✅ M3U generado con éxito")
+        print("✅ M3U generado con éxito:", url)
     except Exception as e:
         print(f"❌ Error al obtener el link de la API: {e}")
